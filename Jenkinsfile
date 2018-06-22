@@ -23,7 +23,7 @@ pipeline {
                     bat "mvn clean install"
                   }                   
                 }  
-                archiveArtifacts '*.jar'    
+                archiveArtifacts 'target/*.jar'    
              }              
            }
            junit 'target/surefire-reports/*.xml'             
