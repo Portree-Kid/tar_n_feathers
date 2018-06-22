@@ -8,6 +8,11 @@ pipeline {
                 script {
                   def props = readProperties file: 'target/maven-archiver/pom.properties'
                   def message = props['version'] 
+                    withEnv(["JAVA_HOME=${ tool 'jdk1.8.0_121' }"]) {
+                      withMaven(maven: 'Maven 3.5.3') {
+                        bat "mvn release:prepare"
+                      }                   
+                    }  
                 }              
              }
           }
@@ -20,7 +25,7 @@ pipeline {
             if (env.BRANCH_NAME != 'master') {
                 withEnv(["JAVA_HOME=${ tool 'jdk1.8.0_121' }"]) {
                   withMaven(maven: 'Maven 3.5.3') {
-                    bat "mvn clean install"
+                    bat "mvn clean install deploy"                   
                   }                   
                 }  
                 archiveArtifacts 'target/*.jar'    
@@ -43,7 +48,7 @@ pipeline {
 
                 withEnv(["JAVA_HOME=${ tool 'jdk1.8.0_121' }"]) {
                   withMaven(maven: 'Maven 3.5.3') {
-//                    bat "mvn release:perform"
+                    bat "mvn release:perform"
                   }                   
                 }  
             }
