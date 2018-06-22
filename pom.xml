@@ -3,12 +3,12 @@
 
 	<groupId>de.keithpaterson</groupId>
 	<artifactId>tar-n-feathers</artifactId>
-	<version>0.0.2</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<scm>
 		<url>https://github.com/Portree-Kid/tar_n_feathers.git</url>
 		<connection>scm:git:git://github.com/Portree-Kid/tar_n_feathers.git</connection>
 		<developerConnection>scm:git:git@github.com:Portree-Kid/tar_n_feathers.git</developerConnection>
-		<tag>tar-n-feathers-0.0.2</tag>
+		<tag>tar_n_feathers-0.0.1</tag>
 	</scm>
 	
 	<packaging>jar</packaging>
