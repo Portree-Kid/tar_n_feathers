@@ -9,9 +9,17 @@ pipeline {
                   def props = readProperties file: 'target/maven-archiver/pom.properties'
                   def message = props['version'] 
                     withEnv(["JAVA_HOME=${ tool 'jdk1.8.0_121' }"]) {
-                      withMaven(maven: 'Maven 3.5.3') {
-                        bat "mvn release:prepare"
-                      }                   
+                      try {
+                          withMaven(maven: 'Maven 3.5.3') {
+                                bat "mvn release:prepare -Dresume=false"
+                          }
+                          def releaseProps = readProperties file: 'release.properties'
+                      } catch (error) {
+                          withMaven(maven: 'Maven 3.5.3') {
+                                bat "mvn release:rollback"
+                          }
+                          error("Release-Prepare failed")
+                      }
                     }  
                 }              
              }
