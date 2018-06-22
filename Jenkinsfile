@@ -47,7 +47,7 @@ pipeline {
                   }                   
                 }  
             }
-            archiveArtifacts '*.jar'
+            archiveArtifacts 'target/*.jar'
           }
         }              
      }
