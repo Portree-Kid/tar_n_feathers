@@ -10,16 +10,13 @@
 
 	<name>tar-n-feathers</name>
 	<url>https://dl.bintray.com/jaycroaker/maven</url>
-	<repositories>
+	<distributionManagement>
 		<repository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
 			<id>bintray-portree-kid-maven</id>
 			<name>bintray</name>
-			<url>https://dl.bintray.com/portree-kid/maven</url>
+			<url>https://api.bintray.com/maven/portree-kid/maven/tar-n-feathers/;publish=1</url>
 		</repository>
-	</repositories>
+	</distributionManagement>
 	<licenses>
 		<license>
 			<name>GNU General Public License 2.0 (GPLv2)</name>
