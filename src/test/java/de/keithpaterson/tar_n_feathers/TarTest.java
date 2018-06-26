@@ -18,16 +18,21 @@
 
 package de.keithpaterson.tar_n_feathers;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.zip.GZIPInputStream;
 
 import org.junit.Test;
 
 /**
- * Unit test for simple App.
+ * Unit test for {@link TarFile}.
  */
 public class TarTest {
 	/**
@@ -63,6 +68,29 @@ public class TarTest {
 	}
 
 	@Test
+	public void testReadFileContentToDir() throws IOException {
+		InputStream inputStream = getClass().getResourceAsStream("/e005n60.tar");
+		InputStream inputStream2 = getClass().getResourceAsStream("/3040642.stg");
+		TarFile f = new TarFile(inputStream);
+		TarFileHeader header = f.readHeader();
+		String filename = header.getFilename();
+		assertEquals("3040642.stg", filename);
+		long size = header.getFilesize();
+		assertEquals(297, size);
+		File dir = new File("e005n60");
+		dir.mkdirs();
+		f.writeFileContentToDir(dir);
+		byte[] testContent = readFile(inputStream2);
+		File writtenFile = new File(dir, "3040642.stg");
+		byte[] content = readFile(writtenFile);
+		writtenFile.delete();
+		assertArrayEquals(testContent, content);
+		String contentString = new String(content);
+		f.close();
+	}
+
+
+	@Test
 	public void testReadContinuous() throws IOException {
 		InputStream inputStream = getClass().getResourceAsStream("/e005n60.tar");
 		TarFile f = new TarFile(inputStream);
@@ -93,4 +121,35 @@ public class TarTest {
 		assertEquals(20899, size);
 		f.close();
 	}
+	
+	
+	/**
+	 * Reads the given File.
+	 * 
+	 * @param file
+	 * @return
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 */
+
+	private byte[] readFile(File file) throws IOException {
+		InputStream fis = new FileInputStream(file);
+		return readFile(fis);
+	}
+
+	public byte[] readFile(InputStream fis) throws IOException {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		int n = 0;
+		byte[] buffer = new byte[8192];
+		int off = 0;
+		while (n != -1) {
+			n = fis.read(buffer);
+			if (n > 0) {
+				bos.write(buffer, 0, n);
+				off += n;
+			}
+		}
+		return bos.toByteArray();
+	}
+
 }

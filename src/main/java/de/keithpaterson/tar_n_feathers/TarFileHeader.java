@@ -24,6 +24,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+/**
+ * Class to read a Tar file. <a href=
+ * "https://www.gnu.org/software/tar/manual/html_node/Standard.html">File
+ * format</a>
+ * 
+ * @author keith.paterson
+ *
+ */
+
 public class TarFileHeader {
 	byte[] name = new byte[100]; /* 0 */
 	byte[] mode = new byte[8]; /* 100 */
@@ -42,22 +51,22 @@ public class TarFileHeader {
 	byte[] devminor = new byte[8]; /* 337 */
 	byte[] prefix = new byte[155]; /* 345 */
 
+	/** Each tar file ends with two null blocks with 512 byte */
 	byte[] endMarker = new byte[512];
 
 	private int filesize;
 	private String filename;
-	private int endMarkers = 0;
 
 	public void read(InputStream is) throws IOException {
 		byte[] header = new byte[512];
-		is.read(header);
+		int read = is.read(header);
 
+		// detect EOF (two 512 byte null markers)
 		if (Arrays.equals(header, endMarker)) {
-			endMarkers++;
 			is.read(header);
-			if(Arrays.equals(header, endMarker))
+			if (Arrays.equals(header, endMarker))
 				throw new EOFException();
-		}		
+		}
 
 		ByteArrayInputStream bis = new ByteArrayInputStream(header);
 		bis.read(name);
