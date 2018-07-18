@@ -20,12 +20,20 @@ package de.keithpaterson.tar_n_feathers;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.GZIPInputStream;
 
@@ -35,6 +43,21 @@ import org.junit.Test;
  * Unit test for {@link TarFile}.
  */
 public class TarTest {
+	
+	private static final class DeleteVisitor extends SimpleFileVisitor<Path> {
+		@Override
+		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+			Files.delete(file);
+			return super.visitFile(file, attrs);
+		}
+
+		@Override
+		public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+			Files.delete(dir);
+			return super.postVisitDirectory(dir, exc);
+		}
+	}
+
 	/**
 	 * Test reading of the header
 	 * 
@@ -68,6 +91,24 @@ public class TarTest {
 	}
 
 	@Test
+	public void testDirectories() throws IOException {
+		InputStream inputStream = getClass().getResourceAsStream("/roads.tar");
+		TarFile f = new TarFile(inputStream);
+		TarFileHeader header;
+		File currentDir = new File(".");
+		while ( (header = f.readHeader()) != null) {
+			long size = header.getFilesize();
+			String filename = header.getFilename();
+			f.writeFileContentToDir(currentDir);
+		}
+		f.close();
+		File testFile = new File("Roads/w010n50/w003n55/2909248.stg");
+		assertTrue(testFile.exists());
+		Path path = Paths.get("Roads");
+		Files.walkFileTree(path, new DeleteVisitor());
+	}
+
+	@Test
 	public void testReadFileContentToDir() throws IOException {
 		InputStream inputStream = getClass().getResourceAsStream("/e005n60.tar");
 		InputStream inputStream2 = getClass().getResourceAsStream("/3040642.stg");
@@ -87,6 +128,8 @@ public class TarTest {
 		assertArrayEquals(testContent, content);
 		String contentString = new String(content);
 		f.close();
+		Path path = Paths.get("e005n60");
+		Files.walkFileTree(path, new DeleteVisitor());
 	}
 
 
@@ -149,6 +192,7 @@ public class TarTest {
 				off += n;
 			}
 		}
+		fis.close();
 		return bos.toByteArray();
 	}
 

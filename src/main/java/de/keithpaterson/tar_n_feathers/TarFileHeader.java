@@ -34,6 +34,26 @@ import java.util.Arrays;
  */
 
 public class TarFileHeader {
+
+	/* Values used in typeflag field. */
+	/** regular file */
+	public static char REGTYPE = '0'; 
+	/** regular file */
+	public static char AREGTYPE = '\0';
+	/** link */
+	public static char LNKTYPE = '1'; 
+	/** reserved */
+	public static char SYMTYPE = '2'; 
+	/** character special */
+	public static char CHRTYPE = '3'; 
+	/** block special */
+	public static char BLKTYPE = '4'; 
+	/** directory */
+	public static char DIRTYPE = '5'; 
+	/** FIFO special */
+	public static char FIFOTYPE = '6';
+	 /** reserved */
+	public static char CONTTYPE = '7';
 	byte[] name = new byte[100]; /* 0 */
 	byte[] mode = new byte[8]; /* 100 */
 	byte[] uid = new byte[8]; /* 108 */

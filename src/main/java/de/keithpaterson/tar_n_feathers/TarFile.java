@@ -88,7 +88,7 @@ public class TarFile implements Closeable {
 	 */
 
 	public byte[] getFileContent() throws IOException {
-		if (readState != FILE || currentHeader == null)
+		if (readState != FILE || currentHeader == null || currentHeader.typeflag[0] == TarFileHeader.DIRTYPE)
 			throw new IllegalState("Not ready to read file");
 		byte[] content = new byte[currentHeader.getFilesize()];
 		inputStream.read(content);
@@ -99,7 +99,7 @@ public class TarFile implements Closeable {
 	}
 
 	/**
-	 * Writes the file contents to a File.
+	 * Writes the file contents to a File or creates the directory.
 	 * 
 	 * @param dir
 	 *            The directory to write the file to.
@@ -108,15 +108,26 @@ public class TarFile implements Closeable {
 	public void writeFileContentToDir(File dir) throws IOException {
 		if (readState != FILE || currentHeader == null)
 			throw new IllegalState("Not ready to read/write file");
+		if (currentHeader.typeflag[0] == TarFileHeader.DIRTYPE) {
+			File newDir = new File(dir, currentHeader.getFilename());
+			if (!newDir.exists()) {
+				boolean result = newDir.mkdirs();
+				if (!result)
+					throw new RuntimeException();
+			}
+			readState = HEADER;
+			return;
+		}
 		long fLen = currentHeader.getFilesize();
 		long fPointer = 0;
 		byte[] buffer = new byte[512];
 		FileOutputStream fos = new FileOutputStream(new File(dir, currentHeader.getFilename()));
 		while (fPointer < fLen) {
-			int readBytes = inputStream.read(buffer, 0, (int) Math.min(fLen-fPointer, 512));
+			int readBytes = inputStream.read(buffer, 0, (int) Math.min(fLen - fPointer, 512));
 			fos.write(buffer, 0, readBytes);
 			fPointer += readBytes;
 		}
+		fos.close();
 		byte[] padding = new byte[(int) (512 - fLen % 512)];
 		inputStream.read(padding);
 		readState = HEADER;
