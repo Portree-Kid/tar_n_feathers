@@ -148,6 +148,61 @@ public class TarTest {
 		f.close();
 	}
 
+	@Test
+	public void testReadEffects() throws IOException {
+		InputStream inputStream = getClass().getResourceAsStream("/Effects.tar");
+		TarFile f = new TarFile(inputStream);
+		TarFileHeader header;
+		while ( (header = f.readHeader()) != null) {
+			String filename = header.getFilename();
+			long size = header.getFilesize();
+			byte[] content = f.getFileContent();
+			assertEquals(size, content.length);
+			String contentString = new String(content);
+			System.out.println(size + header.getFilename());
+		}
+		f.close();
+	}
+
+	@Test
+	public void testReadEffectsTgz() throws IOException {
+		InputStream inputStream = getClass().getResourceAsStream("/Effects.tgz");
+		TarFile f = new TarFile(new GZIPInputStream(inputStream));
+		TarFileHeader header;
+		while ( (header = f.readHeader()) != null) {
+			String filename = header.getFilename();
+			long size = header.getFilesize();
+			byte[] content = f.getFileContent();
+			assertEquals(size, content.length);
+			String contentString = new String(content);
+			System.out.println(size + header.getFilename());
+		}
+		f.close();
+	}
+
+	@Test
+	public void testReadEffectsBoth() throws IOException {
+		InputStream inputStream = getClass().getResourceAsStream("/Effects.tar");
+		InputStream inputStream2 = getClass().getResourceAsStream("/Effects.tgz");
+		TarFile f = new TarFile(inputStream);
+		TarFile f2 = new TarFile(new GZIPInputStream(inputStream2));
+		TarFileHeader header;
+		TarFileHeader header2;
+		while ( (header = f.readHeader()) != null && (header2 = f2.readHeader()) != null) {
+			String filename = header.getFilename();
+			assertHeaderEquals(header, header2);
+			long size = header.getFilesize();
+			byte[] content = f.getFileContent();
+			byte[] content2 = f2.getFileContent();
+			assertEquals(header.getFilesize(), header2.getFilesize());
+			assertArrayEquals(content, content2);
+			assertEquals(size, content.length);
+			String contentString = new String(content);
+			System.out.println(size + header.getFilename());
+		}
+		f.close();
+	}
+
 	/**
 	 * Test reading of the header
 	 * 
@@ -195,5 +250,14 @@ public class TarTest {
 		fis.close();
 		return bos.toByteArray();
 	}
-
+	
+	private void assertHeaderEquals( TarFileHeader h1, TarFileHeader h2) {
+		assertArrayEquals(h1.name, h2.name);
+		assertArrayEquals(h1.mtime, h2.mtime);
+		assertArrayEquals(h1.size, h2.size);
+		assertArrayEquals(h1.magic, h2.magic);
+		assertArrayEquals(h1.uid, h2.uid);
+		assertArrayEquals(h1.chksum, h2.chksum);
+		
+	}
 }

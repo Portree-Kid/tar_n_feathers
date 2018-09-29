@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class to read a Tar file. <a href=
@@ -51,6 +53,8 @@ public class TarFile implements Closeable {
 
 	/** The header of the next file that can be read. */
 	private TarFileHeader currentHeader;
+	
+	Logger loggy = Logger.getLogger(TarFile.class.getSimpleName());
 
 	public TarFile(InputStream inputStream) {
 		this.inputStream = new DataInputStream(inputStream);
@@ -91,9 +95,9 @@ public class TarFile implements Closeable {
 		if (readState != FILE || currentHeader == null || currentHeader.typeflag[0] == TarFileHeader.DIRTYPE)
 			throw new IllegalState("Not ready to read file");
 		byte[] content = new byte[currentHeader.getFilesize()];
-		inputStream.read(content);
+		readFullArray(inputStream, content);
 		byte[] padding = new byte[512 - content.length % 512];
-		inputStream.read(padding);
+		readFullArray(inputStream, padding);
 		readState = HEADER;
 		return content;
 	}
@@ -113,7 +117,7 @@ public class TarFile implements Closeable {
 			if (!newDir.exists()) {
 				boolean result = newDir.mkdirs();
 				if (!result)
-					throw new RuntimeException();
+					throw new IOException("Directory "+ currentHeader.getFilename() + " couldn't be created");
 			}
 			readState = HEADER;
 			return;
@@ -121,15 +125,17 @@ public class TarFile implements Closeable {
 		long fLen = currentHeader.getFilesize();
 		long fPointer = 0;
 		byte[] buffer = new byte[512];
-		FileOutputStream fos = new FileOutputStream(new File(dir, currentHeader.getFilename()));
-		while (fPointer < fLen) {
-			int readBytes = inputStream.read(buffer, 0, (int) Math.min(fLen - fPointer, 512));
-			fos.write(buffer, 0, readBytes);
-			fPointer += readBytes;
+		try (FileOutputStream fos = new FileOutputStream(new File(dir, currentHeader.getFilename()))) {
+			while (fPointer < fLen) {
+				int readBytes = inputStream.read(buffer, 0, (int) Math.min(fLen - fPointer, 512));
+				fos.write(buffer, 0, readBytes);
+				fPointer += readBytes;
+			}
+		} catch (Exception e) {
+			loggy.log(Level.WARNING, e.toString(), e);
 		}
-		fos.close();
 		byte[] padding = new byte[(int) (512 - fLen % 512)];
-		inputStream.read(padding);
+		readFullArray(inputStream, padding);
 		readState = HEADER;
 	}
 
@@ -151,6 +157,14 @@ public class TarFile implements Closeable {
 
 	public void close() throws IOException {
 		inputStream.close();
+	}
+
+	private void readFullArray(InputStream is, byte[] data) throws IOException {
+		long fPointer = 0;
+		while (fPointer < data.length) {
+			int readBytes = is.read(data, (int) fPointer, (int) Math.min(data.length - fPointer, 512));
+			fPointer += readBytes;
+		}
 	}
 
 }

@@ -37,23 +37,23 @@ public class TarFileHeader {
 
 	/* Values used in typeflag field. */
 	/** regular file */
-	public static char REGTYPE = '0'; 
+	public static final char REGTYPE = '0';
 	/** regular file */
-	public static char AREGTYPE = '\0';
+	public static final char AREGTYPE = '\0';
 	/** link */
-	public static char LNKTYPE = '1'; 
+	public static final char LNKTYPE = '1';
 	/** reserved */
-	public static char SYMTYPE = '2'; 
+	public static final char SYMTYPE = '2';
 	/** character special */
-	public static char CHRTYPE = '3'; 
+	public static final char CHRTYPE = '3';
 	/** block special */
-	public static char BLKTYPE = '4'; 
+	public static final char BLKTYPE = '4';
 	/** directory */
-	public static char DIRTYPE = '5'; 
+	public static final char DIRTYPE = '5';
 	/** FIFO special */
-	public static char FIFOTYPE = '6';
-	 /** reserved */
-	public static char CONTTYPE = '7';
+	public static final char FIFOTYPE = '6';
+	/** reserved */
+	public static final char CONTTYPE = '7';
 	byte[] name = new byte[100]; /* 0 */
 	byte[] mode = new byte[8]; /* 100 */
 	byte[] uid = new byte[8]; /* 108 */
@@ -76,37 +76,45 @@ public class TarFileHeader {
 
 	private int filesize;
 	private String filename;
+	
+	/**
+	 * Read the a Tar header for the next file in the archive.
+	 * @param is The stream being read from
+	 * @throws IOException
+	 */
 
 	public void read(InputStream is) throws IOException {
 		byte[] header = new byte[512];
-		int read = is.read(header);
+		readFullArray(is, header);
 
 		// detect EOF (two 512 byte null markers)
 		if (Arrays.equals(header, endMarker)) {
-			is.read(header);
+			readFullArray(is, header);
 			if (Arrays.equals(header, endMarker))
 				throw new EOFException();
+			
+			return;
 		}
 
 		ByteArrayInputStream bis = new ByteArrayInputStream(header);
-		bis.read(name);
-		bis.read(mode);
-		bis.read(uid);
-		bis.read(gid);
-		bis.read(size);
-		bis.read(mtime);
-		bis.read(chksum);
-		bis.read(typeflag);
-		bis.read(linkname);
-		bis.read(magic);
+		readFullArray(bis, name);
+		readFullArray(bis, mode);
+		readFullArray(bis, uid);
+		readFullArray(bis, gid);
+		readFullArray(bis, size);
+		readFullArray(bis,mtime);
+		readFullArray(bis,chksum);
+		readFullArray(bis,typeflag);
+		readFullArray(bis,linkname);
+		readFullArray(bis,magic);
 		if (!new String(magic).trim().equals("ustar"))
-			throw new UnsupportedFileFormat("Can only read ustar");
-		bis.read(version);
-		bis.read(uname);
-		bis.read(gname);
-		bis.read(devmajor);
-		bis.read(devminor);
-		bis.read(prefix);
+			throw new UnsupportedFileFormat("Can only read ustar not " + new String(magic) );
+		readFullArray(bis,version);
+		readFullArray(bis,uname);
+		readFullArray(bis,gname);
+		readFullArray(bis,devmajor);
+		readFullArray(bis,devminor);
+		readFullArray(bis,prefix);
 		bis.close();
 
 		filename = new String(name, "ASCII");
@@ -116,7 +124,15 @@ public class TarFileHeader {
 			throw new UnsupportedFileFormat("Only supports OctalFileSizes");
 
 		} else {
-			filesize = Integer.parseUnsignedInt(new String(size, 0, 11), 8);
+			filesize = Integer.parseInt(new String(size, 0, 11), 8);
+		}
+	}
+
+	public void readFullArray(InputStream is, byte[] header) throws IOException {
+		long fPointer = 0;
+		while (fPointer < header.length) {
+			int readBytes = is.read(header, (int) fPointer, (int) Math.min(header.length - fPointer, 512));
+			fPointer += readBytes;
 		}
 	}
 
